@@ -1,40 +1,44 @@
 import random
 import time
+
 from azure.iot.device import IoTHubDeviceClient, Message
 
-# Got the connection string to connect to the IoT hub. 
-CONNECTION_STRING = "HostName=RefridgeratedTruck.azure-devices.net;DeviceId=RefridgeratedTruck1;SharedAccessKey=4kcyBF7QrySX/X5tSdfslV5EqCVwOlUah5DImHypuco="
+# Device authentication string to connect to the IoT hub
+CONNECTION_STRING = "HostName=smart-farm.azure-devices.net;DeviceId=MyPythonDevice;SharedAccessKey=1LzgWmvJIEKjgFEMq7Uw0KyDMBTanQHeVK0OeFLO20Q="
 
-#Defining the constants to start off with 
+# Define the constants to start off with and the message that will be printed out 
 TEMPERATURE = 20.0
-HUMIDITY = 30
-MSG_TXT = '{{"temperature": {temperature},"humidity": {humidity}}}'
+HUMIDITY = 60
+MOISTURE = 5 
+MSG_TXT = '{{"Temperature": {temperature} ,"Humidity": {humidity}, "Moisture": {moisture}, "Time": {time}}}'
 
 def iothub_client_init():
-    '''Creates a new IoT client'''
+    # Creates an IoT Hub client
     client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
     return client
 
 def iothub_client_telemetry_sample_run():
-
+    timeTaken = 0 
     try:
         client = iothub_client_init()
-        print ( "Device sending periodic messages" )
+        print ( "IoT Hub device sending periodic messages, press Ctrl-C to exit" )
 
         while True:
-            # Simulates random values for the temp and humidity and then stores it all in the message variable. 
+            # Building the message
             temperature = TEMPERATURE + (random.random() * 15)
             humidity = HUMIDITY + (random.random() * 20)
-            msg_txt_formatted = MSG_TXT.format(temperature=temperature, humidity=humidity)
+            moisture = MOISTURE + (random.random() * 20)
+            timeTaken +=0.1 
+            msg_txt_formatted = MSG_TXT.format(temperature=temperature, humidity=humidity, moisture=moisture, time=timeTaken)
             message = Message(msg_txt_formatted)
 
-            # Generates a random value for variables that cant be generated randomly.
+            # Add a warning message if temp goes above the required limit set
             if temperature > 30:
               message.custom_properties["temperatureAlert"] = "true"
             else:
               message.custom_properties["temperatureAlert"] = "false"
 
-            # Prints and then sends of the message to the HUB. 
+            # Sends the message.
             print( "Sending message: {}".format(message) )
             client.send_message(message)
             print ( "Message successfully sent" )
